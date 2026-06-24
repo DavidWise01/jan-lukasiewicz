@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jan Łukasiewicz — a third truth value, and Polish notation</title>
+<meta name="description" content="LOGIKĒ XVIII — Jan Łukasiewicz (1878–1956). He broke the 2,300-year monopoly of true/false: his three-valued logic adds a third value (½, 'possible') for statements not yet settled — Aristotle's sea-battle, the open future — founding many-valued and fuzzy logic. He also invented Polish notation, the parenthesis-free prefix form whose reverse (RPN) runs in calculators, Forth, and every expression parser. Live: a three-valued truth table where the excluded middle fails, and a working Polish-notation evaluator. Honest: non-classical logic is a choice, not the one true logic; and his wartime story is complicated. David Lee Wise, two-layer honest.">
+<style>
+  :root{--bg:#0c0f17;--panel:#121622;--panel2:#19202f;--edge:#2a3346;--ink:#ede6d6;--dim:#b3ad9a;--faint:#7c7660;
+    --ochre:#d9b66a;--ochre2:#f0d79a;--proof:#5ad1ff;--proof2:#a7e6ff;--one:#7fe0a0;--zero:#fb7185;--half:#fbbf24;--amber:#fbbf24;--ember:#fb923c;
+    --mono:'SFMono-Regular',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;--serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);line-height:1.58;background-image:radial-gradient(1100px 560px at 75% -10%,#1c2436 0%,transparent 55%),radial-gradient(900px 500px at 0% 100%,#14110a 0%,transparent 55%);}
+  .wrap{max-width:1000px;margin:0 auto;padding:44px 26px 90px}
+  header{border-bottom:1px solid var(--edge);padding-bottom:22px;margin-bottom:24px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--ochre);opacity:.95}
+  h1{font-family:Georgia,serif;font-size:38px;line-height:1.08;margin:.3em 0 .14em;font-weight:600}h1 em{color:var(--ochre2);font-style:italic}
+  .who{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.04em}
+  .sub{color:var(--dim);font-size:16px;max-width:74ch;margin-top:14px}.sub b{color:var(--ink)}
+  .verdicts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:22px 0}@media(max-width:720px){.verdicts{grid-template-columns:1fr}}
+  .vc{border:1px solid var(--edge);border-radius:11px;padding:13px 15px;border-top-width:3px;background:rgba(18,22,34,.6)}
+  .vc .badge{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em}
+  .vc.s{border-top-color:var(--one)}.vc.s .badge{color:var(--one)} .vc.m{border-top-color:var(--amber)}.vc.m .badge{color:var(--amber)} .vc.f{border-top-color:var(--ember)}.vc.f .badge{color:var(--ember)}
+  .vc p{font-size:12px;color:var(--dim);margin:6px 0 0;line-height:1.45}.vc p b{color:var(--ink)}
+  section{margin:36px 0}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ochre2);border-left:2px solid var(--ochre);padding-left:11px;margin:0 0 6px}
+  .lede{color:var(--dim);font-size:15px;margin:0 0 18px;max-width:80ch}
+  .panel{background:linear-gradient(180deg,var(--panel),#0a0d14);border:1px solid var(--edge);border-radius:14px;padding:20px;box-shadow:0 24px 60px -40px #000}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  button{font-family:var(--mono);font-size:12px;color:var(--ink);background:#1a2030;border:1px solid var(--edge);border-radius:8px;padding:8px 13px;cursor:pointer}button:hover{background:#222b3e;border-color:var(--ochre)}
+  .tri{display:inline-flex;border:1px solid var(--edge);border-radius:8px;overflow:hidden}
+  .tri button{border:0;border-radius:0;border-right:1px solid var(--edge);min-width:54px}
+  .tri button:last-child{border-right:0}
+  .tri button.on{background:#2a2414;color:var(--ochre2)}
+  .v0{color:var(--zero)}.vh{color:var(--half)}.v1{color:var(--one)}
+  .conn{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:6px}
+  .cn{border:1px solid var(--edge);border-radius:10px;padding:12px;background:rgba(0,0,0,.16);text-align:center}
+  .cn .cl{font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .cn .cvv{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:6px}
+  .cn.flag{border-color:var(--half);box-shadow:0 0 0 1px rgba(251,191,36,.25) inset}
+  .glyph{font-family:var(--mono)}
+  .note{color:var(--dim);font-size:13.5px;border-left:2px solid var(--edge);padding-left:13px;margin:16px 0 0}.note b{color:var(--ink)}
+  .pn{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .pn input{font-family:var(--mono);font-size:14px;background:#0c1622;border:1px solid var(--edge);border-radius:8px;color:var(--proof2);padding:9px 11px;flex:1;min-width:200px}
+  .pnout{font-family:var(--mono);font-size:14px;margin-top:6px;min-height:24px}.pnout b{color:var(--one)}.pnout .err{color:var(--zero)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{font-family:var(--mono);font-size:11px;border:1px solid var(--edge);border-radius:20px;padding:5px 11px;cursor:pointer;color:var(--dim)}.chip:hover{border-color:var(--ochre);color:var(--ochre2)}
+  .thm{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}@media(max-width:620px){.thm{grid-template-columns:1fr}}
+  .tm{border:1px solid var(--edge);border-radius:10px;padding:13px 15px;background:rgba(0,0,0,.14)}.tm b{color:var(--ochre2);font-family:var(--mono);font-size:11px}.tm p{font-size:13px;color:var(--dim);margin:6px 0 0}
+  footer{margin-top:44px;border-top:1px solid var(--edge);padding-top:18px;color:var(--faint);font-family:var(--mono);font-size:11px;line-height:1.7}
+  footer a,.bar2 a{color:var(--ochre)}.bar2{font-family:var(--mono);font-size:11.5px;margin-bottom:16px}.bar2 a{text-decoration:none;border-bottom:1px dotted #4a4126}
+  code{font-family:var(--mono);color:var(--ochre2);background:#15120a;padding:1px 5px;border-radius:5px}
+  blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--ochre);color:var(--ink);font-style:italic;font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="bar2"><a href="https://davidwise01.github.io/ud0/">◄ UD0</a> &nbsp; <a href="https://davidwise01.github.io/david-hilbert/">← Hilbert</a> &nbsp; LOGIKĒ · XVIII · the foundations rank</div>
+<header>
+  <div class="kicker">LOGIKĒ · XVIII · a third truth value, and Polish notation</div>
+  <h1>Jan <em>Łukasiewicz</em></h1>
+  <div class="who">1878 – 1956 · Lwów &amp; Warsaw &amp; Dublin · the Lwów–Warsaw school · pronounced "woo-kah-SHAY-vitch"</div>
+  <div class="sub">For 2,300 years logic obeyed Aristotle's law of the excluded middle: every statement is true or false, no third option. Łukasiewicz asked about the <b>open future</b> — "there will be a sea-battle tomorrow" — which seems neither true nor false <em>yet</em>, and in 1920 built the first rigorous <b>three-valued logic</b>: a third value, <b>½</b> ("possible" / "undetermined"), between 0 and 1. It founded all of <b>many-valued and fuzzy logic</b>. And to write logic cleanly he invented <b>Polish notation</b> — operators <em>before</em> their operands, no parentheses needed — whose reverse (RPN) is how calculators, the language Forth, and every expression parser actually compute.</div>
+</header>
+<div class="verdicts">
+  <div class="vc s"><span class="badge">✓ STRONG</span><p><b>Two real, lasting inventions.</b> Many-valued logic is rigorous and generative — fuzzy logic, quantum logic, and modern reasoning-under-uncertainty descend from it. Polish notation is exact and runs in every parser and stack machine.</p></div>
+  <div class="vc m"><span class="badge">◐ A CHOICE, NOT THE LAW</span><p><b>Non-classical means optional.</b> Dropping bivalence is a deliberate <em>choice</em> of logic suited to certain problems, not a proof that classical logic is wrong. Whether the future is "really" ½ is philosophy, not theorem.</p></div>
+  <div class="vc f"><span class="badge">◔ A COMPLICATED LIFE</span><p><b>Honest about the man.</b> A giant of the Lwów–Warsaw school, briefly a minister of education in interwar Poland; he survived the war in difficult, much-debated circumstances and ended his life in exile in Dublin. The logic stands on its own.</p></div>
+</div>
+
+<section>
+  <h2>I · The third value — where true-or-false breaks</h2>
+  <p class="lede">Set each input to <b>0</b> (false), <b>½</b> (undetermined), or <b>1</b> (true). The connectives follow Łukasiewicz's rules: <code>¬a = 1−a</code>, <code>a∧b = min</code>, <code>a∨b = max</code>, <code>a→b = min(1, 1−a+b)</code>. Watch what happens to the <b>law of the excluded middle</b> (<code>a ∨ ¬a</code>, always true in classical logic) when a value is undetermined — it comes out <b>½</b>, not 1. Two thousand years of "every statement is true or false" quietly gives way.</p>
+  <div class="panel">
+    <div class="controls">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--faint)">P =</span>
+      <span class="tri" id="triP"><button data-v="0">0</button><button data-v="0.5" class="on">½</button><button data-v="1">1</button></span>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:10px">Q =</span>
+      <span class="tri" id="triQ"><button data-v="0">0</button><button data-v="0.5">½</button><button data-v="1" class="on">1</button></span>
+    </div>
+    <div class="conn" id="conn"></div>
+    <div class="note">In classical logic <code>P ∨ ¬P</code> is the <b>excluded middle</b> — always true. Here, when P = ½, it is only <b>½</b>: a statement and its negation can <em>both</em> be undetermined. That is the whole revolution — Łukasiewicz showed you can reason consistently <em>without</em> bivalence. ⚑ Set P and Q to ½ and watch how undetermination propagates; this is the great-grandparent of <b>fuzzy logic</b> (truth as a degree) running in control systems and AI today.</div>
+  </div>
+  <blockquote>"I have declared a war upon the universal validity of the principle of the excluded middle." <span style="color:var(--faint);font-style:normal;font-size:12px">— Jan Łukasiewicz</span></blockquote>
+</section>
+
+<section>
+  <h2>II · Polish notation — logic without parentheses</h2>
+  <p class="lede">Łukasiewicz noticed you never need brackets if you write the operator <em>first</em>: instead of <code>(2 + (3 × 4))</code>, write <code>+ 2 × 3 4</code> — scan left to right and the structure is unambiguous. This is <b>Polish notation</b> (prefix). Reverse it — operands first, operator last — and you get <b>RPN</b>, exactly how a stack machine, an HP calculator, the language Forth, and the inside of every compiler evaluate expressions. Type a prefix expression (operators <code>+ - *</code>, then numbers) and evaluate it.</p>
+  <div class="panel">
+    <div class="pn">
+      <input id="pnin" value="+ 2 * 3 4" spellcheck="false">
+      <button id="pneval">evaluate ▸</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="pnout" id="pnout"></div>
+    <div class="note">No parentheses, no precedence rules, no ambiguity — the operator announces how many operands to grab. That parse-by-prefix idea is the spine of how computers read every formula you type. ⚑ Łukasiewicz built it to make <em>logic</em> unambiguous; it became the way <em>machines</em> read arithmetic — another thread from this lineage straight into [[psephos-processors-domain]].</div>
+  </div>
+</section>
+
+<section>
+  <h2>III · Two gifts, and an honest life</h2>
+  <div class="thm">
+    <div class="tm"><b>MANY-VALUED LOGIC</b><p>The first break from bivalence (1920). Generalised to infinitely many values, it is the root of fuzzy logic, probabilistic and quantum logics — reasoning where "true/false" is too blunt.</p></div>
+    <div class="tm"><b>POLISH NOTATION</b><p>Parenthesis-free prefix form. Its reverse, RPN, is the native tongue of stack machines, Forth, and expression evaluation inside compilers and calculators.</p></div>
+  </div>
+  <p class="note" style="border-color:var(--amber);margin-top:16px"><b style="color:var(--amber)">Gate kept on.</b> Two honesties. On the <b>logic</b>: three-valued logic is real and fertile, but adopting it is a <em>choice</em>, not a refutation of classical logic — most of mathematics still runs happily on bivalence, and whether the open future is "genuinely" ½ rather than just unknown-to-us is a philosophical stance, not a theorem. Many-valued logic is a powerful tool, not the discovery that Aristotle was wrong. On the <b>man</b>: Łukasiewicz was a founding giant of the <b>Lwów–Warsaw school</b>, one of the most brilliant logic communities ever, and briefly Poland's minister of religious affairs and education. His path through the Second World War — leaving German-occupied Warsaw and ending, after the war, as a professor in Dublin until his death in 1956 — has been the subject of difficult and contested historical discussion; this page renders his mathematics, which stands entirely on its own, and does not launder or litigate the biography. The third truth value and the notation in every parser are his, plainly. ⚑ [[david-hilbert]] ← · next → Tarski (truth itself).</p>
+</section>
+
+<footer>
+  JAN ŁUKASIEWICZ · LOGIKĒ XVIII · two-layer honest<br>
+  live 3-valued logic Ł3 (P,Q ∈ {0,½,1}; ¬∧∨→ + the excluded middle P∨¬P = ½ at P=½, bivalence fails — verified) · a working Polish-notation (prefix) evaluator (verified "+ 2 * 3 4" = 14)<br>
+  three-valued / many-valued logic (1920) → fuzzy &amp; quantum logic · Polish notation → RPN, stack machines, Forth, every expression parser · the Lwów–Warsaw school<br>
+  ← <a href="https://davidwise01.github.io/david-hilbert/">Hilbert</a> · next → <b>Tarski</b> (the definition of truth)<br>
+  LOGIKĒ · the lineage of logical mathematics · governor David Lee Wise · CC-BY-ND-4.0
+</footer>
+</div>
+<script>
+"use strict";
+// ---------- MODULE I : three-valued logic ----------
+(function(){
+  const $=id=>document.getElementById(id);
+  let P=0.5, Q=1;
+  const not=a=>1-a, and=(a,b)=>Math.min(a,b), or=(a,b)=>Math.max(a,b), imp=(a,b)=>Math.min(1,1-a+b);
+  const glyph=v=> v===0?'0':(v===1?'1':'½');
+  const cls=v=> v===0?'v0':(v===1?'v1':'vh');
+  function draw(){
+    document.querySelectorAll('#triP button').forEach(b=>b.classList.toggle('on',+b.dataset.v===P));
+    document.querySelectorAll('#triQ button').forEach(b=>b.classList.toggle('on',+b.dataset.v===Q));
+    const rows=[
+      ['¬P', not(P), false],
+      ['P ∧ Q', and(P,Q), false],
+      ['P ∨ Q', or(P,Q), false],
+      ['P → Q', imp(P,Q), false],
+      ['P ∨ ¬P', or(P,not(P)), true]  // excluded middle — flag it
+    ];
+    $('conn').innerHTML=rows.map(([lbl,v,flag])=>
+      '<div class="cn'+(flag?' flag':'')+'"><div class="cl">'+lbl+'</div><div class="cvv '+cls(v)+'">'+glyph(v)+'</div>'+
+      (flag?'<div class="cl" style="margin-top:5px;color:'+(v===1?'var(--one)':'var(--half)')+'">'+(v===1?'classical ✓':'fails ≠ 1')+'</div>':'')+'</div>'
+    ).join('');
+  }
+  document.querySelectorAll('#triP button').forEach(b=>b.onclick=()=>{P=+b.dataset.v;draw();});
+  document.querySelectorAll('#triQ button').forEach(b=>b.onclick=()=>{Q=+b.dataset.v;draw();});
+  draw();
+})();
+
+// ---------- MODULE II : Polish notation evaluator ----------
+(function(){
+  const $=id=>document.getElementById(id);
+  const OPS={'+':(a,b)=>a+b,'-':(a,b)=>a-b,'*':(a,b)=>a*b};
+  function evalPrefix(str){
+    const toks=str.trim().split(/\s+/).filter(Boolean);
+    let i=0;
+    function parse(){
+      if(i>=toks.length) throw new Error('unexpected end — an operator is missing its operands');
+      const t=toks[i++];
+      if(t in OPS){ const a=parse(), b=parse(); return OPS[t](a,b); }
+      if(!/^-?\d+(\.\d+)?$/.test(t)) throw new Error('not a number or +,-,*: "'+t+'"');
+      return parseFloat(t);
+    }
+    const v=parse();
+    if(i!==toks.length) throw new Error('leftover tokens — too many operands');
+    return v;
+  }
+  function run(){
+    const s=$('pnin').value;
+    try{
+      const v=evalPrefix(s);
+      $('pnout').innerHTML='<span style="color:var(--faint)">'+s.trim()+'</span> &nbsp;=&nbsp; <b>'+v+'</b> &nbsp;<span style="color:var(--faint)">(parsed by prefix — no parentheses needed)</span>';
+    }catch(e){ $('pnout').innerHTML='<span class="err">✗ '+e.message+'</span>'; }
+  }
+  const examples=['+ 2 * 3 4','* + 1 2 + 3 4','- * 6 7 + 5 5','+ + + 1 2 3 4'];
+  $('chips').innerHTML=examples.map(e=>'<span class="chip" data-e="'+e+'">'+e+'</span>').join('');
+  $('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('pnin').value=c.dataset.e;run();});
+  $('pneval').onclick=run;
+  $('pnin').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+  run();
+})();
+</script>
+</body>
+</html>
